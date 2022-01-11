@@ -6,7 +6,6 @@ const passport = require('passport')
 // pull in Mongoose model for examples
 const Campaign = require('../models/campaign')
 const Comment = require('../models/comment')
-const Contact = require('../models/contact')
 
 
 // this is a collection of methods that help us detect situations when we need
@@ -22,7 +21,6 @@ const requireOwnership = customErrors.requireOwnership
 // this is middleware that will remove blank fields from `req.body`, e.g.
 // { example: { title: '', text: 'foo' } } -> { example: { text: 'foo' } }
 const removeBlanks = require('../../lib/remove_blank_fields')
-const campaign = require('../models/campaign')
 // passing this as a second argument to `router.<verb>` will make it
 // so that a token MUST be passed for that route to be available
 // it will also set `req.user`
@@ -31,33 +29,13 @@ const requireToken = passport.authenticate('bearer', { session: false })
 // instantiate a router (mini app that only handles routes)
 const router = express.Router()
 
-// INDEX
-// GET /examples
-router.get('/campaigns',  (req, res, next) => {
-	Campaign.find()
-		.then((campaigns) => {
-			// `examples` will be an array of Mongoose documents
-			// we want to convert each one to a POJO, so we use `.map` to
-			// apply `.toObject` to each one
-			return campaigns.map((campaign) => campaign.toObject())
-		})
-		// respond with status 200 and JSON of the examples
-		.then((campaigns) => res.status(200).json({ campaigns: campaigns }))
-		// if an error occurs, pass it to the handler
-		.catch(next)
-})
+
 
 // SHOW
-// GET /examples/5a7db6c74d55bc51bdf39793
-router.get('/campaigns/:id', (req, res, next) => {
-	// req.params.id will be set based on the `:id` in the route
-	Campaign.findById(req.params.id)
-		.then(handle404)
-		// if `findById` is succesful, respond with 200 and "example" JSON
-		.then((campaign) => res.status(200).json({ campaign: campaign.toObject() }))
-		// if an error occurs, pass it to the handler
-		.catch(next)
-})
+// GET /examples/5a7db6c74d55bc51bdf39793`
+
+// INDEX
+// GET /examples
 
 router.get('/campaigns/:id/comments', (req,res, next) => {
 	Comment.find()
@@ -74,26 +52,7 @@ router.get('/campaigns/:id/comments', (req,res, next) => {
 })
 
 // CREATE
-// POST /examples
-router.post('/campaigns', requireToken, (req, res, next) => {
-	// set owner of new example to be current user
-	req.body.campaign.owner = req.user.id
-	const currentUser = req.user
-
-	Campaign.create(req.body.campaign)
-		// respond to succesful `create` with status 201 and JSON of new "example"
-		.then((campaign) => {
-			console.log("here is the user", campaign._id)
-			currentUser.createdCampaign.push(campaign._id)
-			currentUser.save()
-			res.status(201).json({ campaign: campaign.toObject() })
-		})
-		// if an error occurs, pass it off to our error handler
-		// the error handler needs the error message and the `res` object so that it
-		// can send an error message back to the client
-		.catch(next)
-})
-
+// POST /comments
 //Each comment will be associated to a Campaign
 router.post('/campaigns/:id/comments', requireToken, (req, res, next) => {
 	// set owner of new example to be current user
@@ -118,53 +77,9 @@ router.post('/campaigns/:id/comments', requireToken, (req, res, next) => {
 		.catch(next)
 })
 
-//Anyone can post there contact information a campaign 
-router.post('/campaigns/:id/contacts',  (req, res, next) => {
-	// set owner of new example to be current user
-
-    req.body.contact.campaign = req.params.id
-
-	Contact.create(req.body.contact)
-		// respond to succesful `create` with status 201 and JSON of new "example"
-		.then((contact) => {
-			console.log('this is the comment', contact)
-			Campaign.findById(req.params.id)
-				.then(foundContact => {
-					foundContact.contact.push(contact._id)
-					foundContact.save()
-					res.status(201).json({ contact: contact.toObject() })
-				})
-		})
-		// if an error occurs, pass it off to our error handler
-		// the error handler needs the error message and the `res` object so that it
-		// can send an error message back to the client
-		.catch(next)
-})
-
 
 // UPDATE
 // PATCH /examples/5a7db6c74d55bc51bdf39793
-router.patch('/campaigns/:id', requireToken, removeBlanks, (req, res, next) => {
-	// if the client attempts to change the `owner` property by including a new
-	// owner, prevent that by deleting that key/value pair
-	delete req.body.campaign.owner
-
-	Campaign.findById(req.params.id)
-		.then(handle404)
-		.then((campaign) => {
-			console.log('this is the campaign', campaign)
-			// pass the `req` object and the Mongoose record to `requireOwnership`
-			// it will throw an error if the current user isn't the owner
-			requireOwnership(req, campaign)
-
-			// pass the result of Mongoose's `.update` to the next `.then`
-			return campaign.updateOne(req.body.campaign)
-		})
-		// if that succeeded, return 204 and no JSON
-		.then(() => res.sendStatus(204))
-		// if an error occurs, pass it to the handler
-		.catch(next)
-})
 
 router.patch('/comments/:id', requireToken, removeBlanks, (req, res, next) => {
 	// if the client attempts to change the `owner` property by including a new

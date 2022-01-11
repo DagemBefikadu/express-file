@@ -105,14 +105,14 @@ router.patch('/comments/:id', requireToken, removeBlanks, (req, res, next) => {
 
 // DESTROY
 // DELETE /examples/5a7db6c74d55bc51bdf39793
-router.delete('/campaigns/:id', requireToken, (req, res, next) => {
-	Campaign.findById(req.params.id)
+router.delete('/comments/:id', requireToken, (req, res, next) => {
+	Comment.findById(req.params.id)
 		.then(handle404)
-		.then((campaign) => {
+		.then((comment) => {
 			// throw an error if current user doesn't own `example`
-			requireOwnership(req, campaign)
+			requireOwnership(req, comment)
 			// delete the example ONLY IF the above didn't throw
-			campaign.deleteOne()
+			comment.deleteOne()
 		})
 		// send back 204 and no content if the deletion succeeded
 		.then(() => res.sendStatus(204))

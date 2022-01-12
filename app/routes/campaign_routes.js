@@ -59,19 +59,7 @@ router.get('/campaigns/:id', (req, res, next) => {
 		.catch(next)
 })
 
-router.get('/campaigns/:id/comments', (req,res, next) => {
-	Comment.find()
-		.then((comments) => {
-			// `examples` will be an array of Mongoose documents
-			// we want to convert each one to a POJO, so we use `.map` to
-			// apply `.toObject` to each one
-			return comments.map((comment) => comment.toObject())
-		})
-		// respond with status 200 and JSON of the examples
-		.then((comments) => res.status(200).json({ comments: comments }))
-		// if an error occurs, pass it to the handler
-		.catch(next)
-})
+
 
 // CREATE
 // POST /examples
@@ -94,29 +82,7 @@ router.post('/campaigns', requireToken, (req, res, next) => {
 		.catch(next)
 })
 
-//Each comment will be associated to a Campaign
-router.post('/campaigns/:id/comments', requireToken, (req, res, next) => {
-	// set owner of new example to be current user
-	req.body.comment.owner = req.user.id
 
-    req.body.comment.campaign = req.params.id
-
-	Comment.create(req.body.comment)
-		// respond to succesful `create` with status 201 and JSON of new "example"
-		.then((comment) => {
-			console.log('this is the comment', comment)
-			Campaign.findById(req.params.id)
-				.then(foundComment => {
-					foundComment.comment.push(comment._id)
-					foundComment.save()
-					res.status(201).json({ comment: comment.toObject() })
-				})
-		})
-		// if an error occurs, pass it off to our error handler
-		// the error handler needs the error message and the `res` object so that it
-		// can send an error message back to the client
-		.catch(next)
-})
 
 //Anyone can post there contact information a campaign 
 router.post('/campaigns/:id/contacts',  (req, res, next) => {
@@ -166,27 +132,6 @@ router.patch('/campaigns/:id', requireToken, removeBlanks, (req, res, next) => {
 		.catch(next)
 })
 
-router.patch('/comments/:id', requireToken, removeBlanks, (req, res, next) => {
-	// if the client attempts to change the `owner` property by including a new
-	// owner, prevent that by deleting that key/value pair
-	delete req.body.comment.owner
-
-	Comment.findById(req.params.id)
-		.then(handle404)
-		.then((comment) => {
-			console.log('this is the campaign', comment)
-			// pass the `req` object and the Mongoose record to `requireOwnership`
-			// it will throw an error if the current user isn't the owner
-			requireOwnership(req, comment)
-
-			// pass the result of Mongoose's `.update` to the next `.then`
-			return comment.updateOne(req.body.comment)
-		})
-		// if that succeeded, return 204 and no JSON
-		.then(() => res.sendStatus(204))
-		// if an error occurs, pass it to the handler
-		.catch(next)
-})
 
 // DESTROY
 // DELETE /examples/5a7db6c74d55bc51bdf39793

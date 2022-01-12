@@ -7,6 +7,7 @@ const passport = require('passport')
 const Campaign = require('../models/campaign')
 const Comment = require('../models/comment')
 const Contact = require('../models/contact')
+const User = require('../models/user')
 
 
 // this is a collection of methods that help us detect situations when we need
@@ -52,6 +53,7 @@ router.get('/campaigns',  (req, res, next) => {
 router.get('/campaigns/:id', (req, res, next) => {
 	// req.params.id will be set based on the `:id` in the route
 	Campaign.findById(req.params.id)
+	.populate("comment")
 		.then(handle404)
 		// if `findById` is succesful, respond with 200 and "example" JSON
 		.then((campaign) => res.status(200).json({ campaign: campaign.toObject() }))
@@ -136,13 +138,19 @@ router.patch('/campaigns/:id', requireToken, removeBlanks, (req, res, next) => {
 // DESTROY
 // DELETE /examples/5a7db6c74d55bc51bdf39793
 router.delete('/campaigns/:id', requireToken, (req, res, next) => {
-	Campaign.findById(req.params.id)
+	User.findById(req.user.id)
 		.then(handle404)
-		.then((campaign) => {
+		.then((foundUser) => {
 			// throw an error if current user doesn't own `example`
-			requireOwnership(req, campaign)
+		
 			// delete the example ONLY IF the above didn't throw
-			campaign.deleteOne()
+			foundUser.createdCampaign.pull(req.params.id)
+			foundUser.save()
+			Campaign.findById(req.params.id)
+			.then(handle404)
+			.then((campaign) => {
+				campaign.deleteOne()
+			})
 		})
 		// send back 204 and no content if the deletion succeeded
 		.then(() => res.sendStatus(204))

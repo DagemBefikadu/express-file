@@ -16,6 +16,10 @@ const BadParamsError = errors.BadParamsError
 const BadCredentialsError = errors.BadCredentialsError
 
 const User = require('../models/user')
+const Campaign = require('../models/campaign')
+const Comment = require('../models/comment')
+const customErrors = require('../../lib/custom_errors')
+const handle404 = customErrors.handle404
 
 // passing this as a second argument to `router.<verb>` will make it
 // so that a token MUST be passed for that route to be available
@@ -24,6 +28,42 @@ const requireToken = passport.authenticate('bearer', { session: false })
 
 // instantiate a router (mini app that only handles routes)
 const router = express.Router()
+
+//GET/Users
+router.get('/users', (req, res, next) => {
+	User.find()
+		.then((users) => {
+		
+			// `Users` will be an array of Mongoose documents
+			// we want to convert each one to a POJO, so we use `.map` to
+			// apply `.toObject` to each one
+			return users.map((user) => user.toObject())
+		})
+		// respond with status 200 and JSON of the items
+		.then((users) => res.status(200).json({ users: users }))
+		// if an error occurs, pass it to the handler
+		.catch(next)
+})
+
+router.get('/users/createdCampaigns',requireToken, (req, res, next) =>{
+	User.findById(req.user.id)
+	.populate('createdCampaign')
+		.then(users => {
+			console.log(users)
+			res.status(200).json({ users })
+		})
+		.catch(next)
+})
+
+router.get('/users/favorites',requireToken, (req, res, next) =>{
+	User.findById(req.user.id)
+	.populate('favoriteCampaign')
+		.then(users => {
+			console.log(users)
+			res.status(200).json({ users })
+		})
+		.catch(next)
+})
 
 // SIGN UP
 // POST /sign-up
@@ -132,6 +172,24 @@ router.patch('/change-password', requireToken, (req, res, next) => {
 		.then(() => res.sendStatus(204))
 		// pass any errors along to the error handler
 		.catch(next)
+})
+
+router.delete('/createdCampaigns/:id', requireToken, (req,res,next) => {
+	User.findById(req.user.id)
+	.then(handle404)
+	.then((foundUser) => {
+		foundUser.createdCampaign.pull(req.params.id)
+		foundUser.save()
+		Campaign.findById(req.params.id)
+		.then(handle404)
+		.then((campaigns) => {
+			campaigns.deleteOne()
+		})
+		Comment.deleteMany({campaignId: req.params.id})
+		.then(() => console.log('deleted comment'))
+	})
+	.then(() =>res.sendStatus(204))
+	.catch(next)
 })
 
 router.delete('/sign-out', requireToken, (req, res, next) => {

@@ -18,6 +18,9 @@ const campaignSchema = new mongoose.Schema(
             type: String, 
             required: true,
         },
+        website: {
+            type: String,
+        },
         image: {
             type: String,
         },

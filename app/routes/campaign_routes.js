@@ -61,6 +61,23 @@ router.get('/campaigns/:id', (req, res, next) => {
 		.catch(next)
 })
 
+router.get('/campaigns/:id/contacts/:contactId', (req,res, next) => {
+	Campaign.findById(req.params.id)
+	.then(handle404)
+	.then((foundCampaign) => {
+		// throw an error if current user doesn't own `example`
+		foundCampaign.contact.pull(req.params.contactId)
+		foundCampaign.save()
+		// delete the example ONLY IF the above didn't throw
+		Contact.findById(req.params.contactId)
+		.populate("campaign")
+
+			// respond with status 200 and JSON of the examples
+			.then((contacts) => res.status(200).json({ contacts: contacts }))
+			// if an error occurs, pass it to the handler
+			.catch(next)
+	})
+})
 
 
 // CREATE
@@ -115,7 +132,7 @@ router.post('/campaigns/:id/contacts',  (req, res, next) => {
 router.patch('/campaigns/:id', requireToken, removeBlanks, (req, res, next) => {
 	// if the client attempts to change the `owner` property by including a new
 	// owner, prevent that by deleting that key/value pair
-	delete req.body.campaign.owner
+	// delete req.body.campaign.owner
 
 	Campaign.findById(req.params.id)
 		.then(handle404)
@@ -131,6 +148,17 @@ router.patch('/campaigns/:id', requireToken, removeBlanks, (req, res, next) => {
 		// if that succeeded, return 204 and no JSON
 		.then(() => res.sendStatus(204))
 		// if an error occurs, pass it to the handler
+		.catch(next)
+})
+
+router.patch('/campaigns/favorites/:id', requireToken, removeBlanks, (req,res,next) => {
+	User.findById(req.user.id)
+		.then(handle404)
+		.then(foundUser => {
+			foundUser.favoriteCampaign.pull(req.params.id)
+			return foundUser.save()
+		})
+		.then(() => res.sendStatus(204))
 		.catch(next)
 })
 

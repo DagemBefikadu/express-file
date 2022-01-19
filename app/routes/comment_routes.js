@@ -54,20 +54,26 @@ router.get('/campaigns/:id/comments', (req,res, next) => {
 		.catch(next)
 })
 
-// router.get('/campaigns/:id/comments', (req,res, next) => {
-// 	Comment.find()
-// 	.populate("owner", "name")
-// 		.then((comments) => {
-// 			// `examples` will be an array of Mongoose documents
-// 			// we want to convert each one to a POJO, so we use `.map` to
-// 			// apply `.toObject` to each one
-// 			return comments.map((comment) => comment.toObject())
-// 		})
-// 		// respond with status 200 and JSON of the examples
-// 		.then((comments) => res.status(200).json({ comments: comments }))
-// 		// if an error occurs, pass it to the handler
-// 		.catch(next)
-// })
+router.get('/campaigns/:id/comments/:commentId', (req,res, next) => {
+	Campaign.findById(req.params.id)
+	.then(handle404)
+	.then((foundCampaign) => {
+		// throw an error if current user doesn't own `example`
+		foundCampaign.comment.pull(req.params.commentId)
+		foundCampaign.save()
+		// delete the example ONLY IF the above didn't throw
+		Comment.findById(req.params.commentId)
+		.populate("campaignId", "_id")
+
+			// respond with status 200 and JSON of the examples
+			.then((comments) => res.status(200).json({ comments: comments }))
+			// if an error occurs, pass it to the handler
+			.catch(next)
+	})
+	
+})
+
+
 
 // CREATE
 // POST /comments

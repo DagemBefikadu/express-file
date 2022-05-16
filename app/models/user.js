@@ -11,10 +11,10 @@ const userSchema = new mongoose.Schema(
 			required: true,
 			unique: true,
 		},
-		favoriteCampaign: [{
-			type: mongoose.Schema.Types.ObjectId,
-			ref: 'Campaign'
-		}],
+		// favoriteCampaign: [{
+		// 	type: mongoose.Schema.Types.ObjectId,
+		// 	ref: 'Campaign'
+		// }],
 		createdCampaign: [{
 			type: mongoose.Schema.Types.ObjectId,
 			ref:'Campaign'

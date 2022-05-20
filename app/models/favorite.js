@@ -13,4 +13,4 @@ const favoriteFormSchema = new mongoose.Schema(
     }
 )
 
-module.exports = mongoose.model('Favorite', contactFormSchema)
+module.exports = mongoose.model('Favorite', favoriteFormSchema)

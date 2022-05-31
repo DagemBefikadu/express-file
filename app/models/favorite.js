@@ -11,6 +11,7 @@ const favoriteFormSchema = new mongoose.Schema(
     {
         timestamps: true
     }
-)
+)  
+//Whats this
 
 module.exports = mongoose.model('Favorite', favoriteFormSchema)
